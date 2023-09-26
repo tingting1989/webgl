@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+
+    <body>
+        <h2>4x4 矩阵</h2>
+        <img src="./IMG_4039.HEIC.JPG" alt="" srcset="" style="width:800px">
+
+        <canvas id="webgl" width="400" height="400"></canvas>
+        <script>
+            // 定点着色器程序
+            const VSHADER_SOURCE = `
+                attribute vec4 a_Position;
+                uniform mat4 u_xformMatrix;
+                void main(){
+                    gl_Position = u_xformMatrix * a_Position;
+                }
+            `
+            // 片元着色器程序
+
+            const FSHADER_SOURCE = `
+                void main(){
+                    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+                }
+            `
+            const ANGLE = 90.0;
+
+            //
+
+            function main() {
+                const canvas = document.getElementById('webgl');
+                const gl = canvas.getContext('webgl');
+
+                if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+                    console.error('创建失败');
+                    return
+                }
+
+                const n = initVertexBuffers(gl);
+                const radian = Math.PI * ANGLE / 180.0;
+                const cosB = Math.cos(radian);
+                const sinB = Math.sin(radian);
+                const xformMatrix = new Float32Array([
+                    cosB, sinB, 0.0, 0.0,
+                    -sinB, cosB, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0
+                ])
+                // 将旋转矩阵传输给顶点着色器
+                const u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
+                gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+                // 指定清空 <canvas> 的颜色
+                gl.clearColor(0.0, 0.0, 1.0, 1.0);
+                // 清空canvas
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.drawArrays(gl.TRIANGLES, 0, n) // 绘制三角形
+
+            }
+
+            main();
+            //  创建顶点缓冲区
+            function initVertexBuffers(gl) {
+
+                const vertices = new Float32Array([
+                    0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+                ])
+
+                const n = 3;
+                const vertexBuffer = gl.createBuffer();
+                if (!vertexBuffer) {
+                    console.error('创建缓冲区失败');
+                    return;
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+                gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+                const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+                gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+                // 连接
+                gl.enableVertexAttribArray(a_Position)
+
+                return n
+
+
+            }
+
+            function initShaders(gl, vshader, fsahder) {
+                const program = createProgram(gl, vshader, fsahder);
+                gl.useProgram(program);
+                gl.program = program
+                return true;
+            }
+            // 创建着色器对象
+            function createProgram(gl, vshader, fsahder) {
+                const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vshader);
+                const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsahder);
+                const program = gl.createProgram();
+                gl.attachShader(program, vertexShader);
+                gl.attachShader(program, fragmentShader);
+                gl.linkProgram(program);
+                // 检查连接
+                const link = gl.getProgramParameter(program, gl.LINK_STATUS)
+                return program
+            }
+            // 创建着色器
+            function loadShader(gl, type, source) {
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                // 检查着色器的编译状态
+                const compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+                return shader
+            }
+        </script>
+    </body>
+
+</html>
