@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>第一个 webgl </h1>
+
+    <canvas id="webgl" width="400" height="400"></canvas>
+
+    <script>
+
+        // 顶点着色器程序
+        let VSHADE_SOURCE = `void main(){
+                gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+                gl_PointSize = 10.0;
+            }`
+
+        // 片元着色器
+        let FSHADER_SOURCE = `void main(){
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }`
+        function main() {
+            // 获取canvas
+            let canvas = document.getElementById('webgl');
+            let gl = canvas.getContext('webgl');
+
+
+            if (!initShaders(gl, VSHADE_SOURCE, FSHADER_SOURCE)) {
+                console.log('初始化 shader 出错');
+                return
+            }
+
+            // 指定清空 <canvas> 的颜色
+            gl.clearColor(0.0, 0.0, 1.0, 1.0);
+            console.log(gl);
+            // 清空canvas
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.drawArrays(gl.POINTS, 0, 1)
+
+        }
+
+        main()
+
+        function loadShader(gl, type, source) {
+            // 创建着色器
+            let shader = gl.createShader(type)
+            // 设置着色器的源代码
+            gl.shaderSource(shader, source);
+            // 编译着色器
+            gl.compileShader(shader, source);
+
+            // 检查着色器的编译状态
+            let compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            return shader
+        }
+
+        function createProgram(gl, vshader, fshader) {
+            // 创建着色器对象
+            let vertexShader = loadShader(gl, gl.VERTEX_SHADER, vshader)
+            let fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fshader)
+            // 创建程序对象
+            let program = gl.createProgram();
+
+            // 为程序对象分配定点着色器和元片着色器
+
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+
+            // 连接着色器
+            gl.linkProgram(program);
+            // 检查连接
+            let link = gl.getProgramParameter(program, gl.LINK_STATUS);
+            return program
+        }
+
+
+        function initShaders(gl, vshader, fshader) {
+            let program = createProgram(gl, vshader, fshader);
+            gl.useProgram(program);
+            gl.program = program
+            return true
+        }
+    </script>
+</body>
+
+</html>

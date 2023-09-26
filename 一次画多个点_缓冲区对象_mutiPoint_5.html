@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>一次画多个点，缓冲区对象练习</h1>
+    <h2>使用缓冲区对象向顶点着色器传入多个顶点的数据，需要遵循一下五个步骤。</h2>
+
+    <h3>1、创建缓冲区对象( gl.createBuffer() );</h3>
+    <h3>2、绑定缓冲区对象（ gl.bindBuffer() ）;</h3>
+    <h3>3、将数据写入缓冲区对象 （ gl.bufferData() ）;</h3>
+    <h3>4、将缓冲区对象分配给一个 attribute 变量（ gl.vertexAttribPointer() ）；</h3>
+    <h3>5、开启 attribute 变量 （gl.enableVertexAttribArray() ）</h3>
+
+    <canvas id="webgl" width="400" height="400"></canvas>
+    <script>
+        // attribute 顶点着色器程序,分号是必须的
+        const VSHADER_SOURCE = `attribute vec4 a_Position;
+            void main(){
+                gl_Position = a_Position;
+                gl_PointSize = 10.0;
+            }
+        `
+
+        // 片元着色器
+        const FSHADER_SOURCE = `void main(){
+                gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+            }
+        `
+        function main() {
+
+            const canvas = document.getElementById('webgl');
+            let gl = canvas.getContext('webgl');
+
+            if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+                console.log('初始化错误');
+                return;
+            };
+
+            // 设置顶点位置
+            const n = initVertexBuffers(gl);
+
+
+            // 指定清空 <canvas> 的颜色
+            gl.clearColor(0.0, 0.0, 1.0, 1.0);
+            console.log(gl);
+            // 清空canvas
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.drawArrays(gl.POINTS, 0, n)
+        };
+
+        main();
+
+
+        function initVertexBuffers(gl) {
+            const vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
+            const n = 3; // 点的个数
+            // 创建缓冲区
+            const vertexBuffer = gl.createBuffer();
+
+            if (!vertexBuffer) {
+                console.log('创建缓冲区失败');
+                return -1;
+            }
+
+            // 将缓冲区对象绑定到目标
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            // 向缓冲区写入数据
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            // 将缓冲区对象分配给 a_Position 变量
+            const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            console.log(a_Position);
+            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+
+            // 连接 a_Position 变量；
+            gl.enableVertexAttribArray(a_Position);
+            return n
+
+
+
+        }
+
+
+
+        // 使用着色器对象
+        function initShaders(gl, vshader, fshader) {
+            const program = createProgram(gl, vshader, fshader);
+            gl.useProgram(program)
+            gl.program = program;
+            return true
+
+        }
+
+        // 创建着色器对象
+        function createProgram(gl, vshader, fshader) {
+            const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vshader);
+            const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fshader);
+            // 创建程序对象
+            let program = gl.createProgram();
+            // 为程序对象分配着色器对象
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            // 链接程序对象
+            gl.linkProgram(program);
+            // 检查链接
+            const link = gl.getProgramParameter(program, gl.LINK_STATUS);
+            return program;
+        };
+
+        function loadShader(gl, type, source) {
+            // 创建着色器对象
+            const shader = gl.createShader(type);
+            // 向着着色器对象中填充着色器程序的源代码
+            gl.shaderSource(shader, source);
+            // 编译着色器
+            gl.compileShader(shader);
+
+            // 检查着色器的编译状态
+            const compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            return shader;
+        }
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+    <h1> webgl 使用 uniform 变量 </h1>
+    <h3>使用 uniform 变量,uniform变量传输的是那些对于所有顶点都相同（或与顶点无关）的数据，需要包含一下步骤</h3>
+
+    <h4>1、在片元着色器中准备 uniform 变量</h4>
+    <h4>2、用这个 uniform 变量 向 gl_FragColor 赋值</h4>
+    <h4>3、将颜色数据从 JavaScript 传给该 uniform 变量</h4>
+
+    <canvas id="webgl" width="400" height="400"></canvas>
+
+    <script>
+
+        // attribute 顶点着色器程序
+        let VSHADE_SOURCE = `attribute vec4 a_Position;
+            attribute float a_PointSize;
+            void main(){
+                gl_Position = a_Position;
+                gl_PointSize = a_PointSize;
+            }`
+
+        // 片元着色器
+        let FSHADER_SOURCE = `precision mediump float;
+            uniform vec4 u_FragColor;
+            void main(){
+                gl_FragColor = u_FragColor;
+            }`
+        function main() {
+            // 获取canvas
+            const canvas = document.getElementById('webgl');
+            let gl = canvas.getContext('webgl');
+
+
+            if (!initShaders(gl, VSHADE_SOURCE, FSHADER_SOURCE)) {
+                console.log('初始化 shader 出错');
+                return
+            }
+
+            // 获取 attribute 变量的存储位置
+            const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+
+            // 获取u_FragColor 变量的存储位置
+            const u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+            // 注册鼠标点击事件响应函数
+            canvas.onmousedown = function (ev) {
+                click(ev, gl, canvas, a_Position, u_FragColor)
+            }
+
+            if (a_Position < 0) {
+                console.log('获取 a_Position 变量失败');
+                return;
+            }
+            // 将顶点位置传输给 attribute 变量
+            gl.vertexAttrib3f(a_Position, 0.5, 0.0, 0.0);
+            gl.vertexAttrib1f(a_PointSize, 10.0)
+            // 指定清空 <canvas> 的颜色
+            gl.clearColor(0.0, 0.0, 1.0, 1.0);
+            console.log(gl);
+            // 清空canvas
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            // gl.drawArrays(gl.POINTS, 0, 1)
+
+        }
+
+        main()
+
+
+        // 鼠标点击位置数组
+        let g_points = [];
+        // 存储点颜色的数组
+        let g_colors = [];
+        function click(ev, gl, canvas, a_Position, u_FragColor) {
+            let x = ev.clientX;// 鼠标点击处的 x 坐标
+            let y = ev.clientY;// 鼠标点击处的 x  坐标
+            // const rect = document.getElementById("webgl").getBoundingClientRect()
+            const rect = ev.target.getBoundingClientRect();
+
+            // 转换为 gl 坐标
+            x = ((x - rect.left) - canvas.height / 2) / (canvas.height / 2);
+            y = (canvas.width / 2 - (y - rect.top)) / (canvas.width / 2);
+            g_points.push([x, y]);
+            if (x >= 0.0 && y >= 0.0) {
+                // 第一象限
+                g_colors.push([1.0, 0.0, 0.0, 1.0]);// 红色
+            } else if (x < 0.0 && y < 0.0) {
+                // 第三象限
+                g_colors.push([0.0, 1.0, 0.0, 1.0]) // 绿色
+            } else {
+                // 其他
+                g_colors.push([1.0, 1.0, 1.0, 1.0]) // 白色
+            }
+
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            for (let index = 0; index < g_points.length; index++) {
+                let rgba = g_colors[index];
+                gl.vertexAttrib3f(a_Position, g_points[index][0], g_points[index][1], 0.0)
+                // 设置绘制点的颜色
+                gl.uniform4f(u_FragColor, rgba[0],rgba[1],rgba[2],rgba[3])
+                // 绘制点
+                gl.drawArrays(gl.POINTS, 0, 1)
+            }
+        }
+
+        function loadShader(gl, type, source) {
+            // 创建着色器
+            let shader = gl.createShader(type)
+            // 设置着色器的源代码
+            gl.shaderSource(shader, source);
+            // 编译着色器
+            gl.compileShader(shader);
+
+            // 检查着色器的编译状态
+            let compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            return shader
+        }
+
+        function createProgram(gl, vshader, fshader) {
+            // 创建着色器对象
+            let vertexShader = loadShader(gl, gl.VERTEX_SHADER, vshader)
+            let fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fshader)
+            // 创建程序对象
+            let program = gl.createProgram();
+
+            // 为程序对象分配定点着色器和元片着色器
+
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+
+            // 连接程序对象
+            gl.linkProgram(program);
+            // 检查连接
+            let link = gl.getProgramParameter(program, gl.LINK_STATUS);
+            return program
+        }
+
+
+        function initShaders(gl, vshader, fshader) {
+            let program = createProgram(gl, vshader, fshader);
+            gl.useProgram(program);
+            gl.program = program
+            return true
+        }
+    </script>
+</body>
+
+</html>
