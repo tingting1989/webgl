@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+
+    <body>
+        <h2>创建多个缓冲区画不同大小的点</h2>
+        <div>
+            <img src="" alt="" srcset="">
+        </div>
+        <canvas id="webgl" width="400" height="400"></canvas>
+        <script>
+            const VSHADER_SOURCE = `
+                attribute vec4 a_Position;
+                attribute float a_PointSize;
+                void main(){
+                    gl_Position = a_Position;
+                    gl_PointSize = a_PointSize;
+                }
+            `
+
+            const FSHADER_SOURCE = `
+                void main(){
+                    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+                }
+            `
+
+            function main() {
+                const canvas = document.getElementById('webgl');
+                const gl = canvas.getContext('webgl');
+                if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+                    console.error('初始化着色器错误');
+                    return;
+                }
+                const n = initVertexBuffers(gl);
+                // 指定清空 <canvas> 的颜色
+                gl.clearColor(0.0, 0.0, 1.0, 1.0);
+                console.log(gl);
+                // 清空canvas
+                gl.clear(gl.COLOR_BUFFER_BIT);
+
+                // gl.drawArrays(gl.POINTS, 0, n) // 绘制点
+                // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n) // 绘制三角形
+                gl.drawArrays(gl.POINTS, 0, n)
+            }
+
+            main();
+
+            // 创建缓冲区
+            function initVertexBuffers(gl) {
+                // 顶点坐标
+                const vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5])
+                const n = 3;
+                // 顶点大小
+                const sizes = new Float32Array([10.0, 20.0, 30.0]);
+                // 创建buffer
+                const vertextBuffer = gl.createBuffer();
+
+                // 绑定buffer
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+                const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+                gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(a_Position);
+
+
+                // 将顶点大小写入缓冲区
+                const sizesBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, sizesBuffer);
+                // // 将数据写入缓冲区对象
+                gl.bufferData(gl.ARRAY_BUFFER, sizes, gl.STATIC_DRAW);
+                // // 将缓冲区对象分配给对应的变量
+                const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+                gl.vertexAttribPointer(a_PointSize, 1, gl.FLOAT, false, 0, 0);
+                // // 开启相应的变量
+                gl.enableVertexAttribArray(a_PointSize);
+                return n;
+            }
+            // 初始化着色器
+            function initShaders(gl, vshader, fshader) {
+                const program = createProgram(gl, vshader, fshader);
+                gl.useProgram(program);
+                gl.program = program;
+                return true;
+            }
+            function createProgram(gl, vshader, fshader) {
+                const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vshader);
+                const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fshader);
+                const program = gl.createProgram();
+                gl.attachShader(program, vertexShader);
+                gl.attachShader(program, fragmentShader);
+                gl.linkProgram(program);
+                const link = gl.getProgramParameter(program, gl.LINK_STATUS);
+                return program
+            }
+            function loadShader(gl, type, source) {
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                const compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+
+                console.log(compiled);
+                return shader;
+            }
+        </script>
+    </body>
+
+</html>

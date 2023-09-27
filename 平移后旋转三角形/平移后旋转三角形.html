@@ -9,7 +9,13 @@
 
     <body>
         <h2>平移后旋转三角形</h2>
+
+        <div>
+            <img src="./a9831f45b8806fc92c8a3d5948dbe9cb.jpg" alt="" srcset="" style="width:800px">
+            <img src="./ed17173c349d7b53703c78a6fca6b5da.jpg" alt="" srcset=""  style="width:800px">
+        </div>
         <canvas id="webgl" width="400" height="400"></canvas>
+
         <script src="../cuon-matrix.js"></script>
         <script>
 
@@ -42,11 +48,10 @@
                 const modelMatrix = new Matrix4();
                 // 计算模型矩阵
                 modelMatrix.setRotate(ANGLE, 0, 0, 1);// 设置为旋转矩阵
-                modelMatrix.translate(Tx, 0, 0)//将模型矩阵乘以平移矩阵
+                modelMatrix.translate(Tx, 0, 0); // 将模型矩阵乘以平移矩阵
                 // 将平移距离传输给定点着色器
                 const u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
                 gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-
 
                 // 指定清空 <canvas> 的颜色
                 gl.clearColor(0.0, 0.0, 1.0, 1.0);
