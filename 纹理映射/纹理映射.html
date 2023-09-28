@@ -9,8 +9,22 @@
 
     <body>
         <h2>纹理映射</h2>
+
+        <h3>要进行纹理映射，须遵循以下四步：</h3>
+        <h4>1.准备好映射到集合徒刑上的纹理图像。</h4>
+        <h4>2.为几何图像配置纹理映射方式。</h4>
+        <h4>3.加载纹理图像，对其进行一些配置，以在 webgl 中使用它。</h4>
+        <h4>4.在片元着色器中将相应的纹素中抽取出来，并将纹素的颜色赋给片元</h4>
         <div>
+
+            <img src="./d763f36b7c3f2526680e7e971c06e60f.jpg" alt="" srcset="" style="width:800px">
+            <img src="./623d6303ecb43a5e7ff33cee9480e408.jpg" alt="" srcset="" style="width:800px">
             <img src="./sky.jpg" alt="" srcset="">
+        </div>
+
+        <div>
+            <h2>图像坐标系统和 webgl 纹理坐标系统</h2>
+            <img src="./7e3af35d52903193627c82fe252208e0.jpg" alt="" srcset="" style="width:800px">
         </div>
         <canvas id="webgl" width="400" height="400"></canvas>
         <script>
@@ -23,7 +37,7 @@
                     v_TexCoord = a_TexCoord;
                 }
             `
-
+            //  u_Sampler 用来接收纹理图像
             const FSHADER_SOURCE = `
                 precision mediump float;
                 uniform sampler2D u_Sampler;
@@ -52,12 +66,15 @@
                 }
 
             }
-
+            88204202
             main();
 
             // 创建缓冲区
             function initVertexBuffers(gl) {
                 const verticesTexCoords = new Float32Array([
+                    // 纹理要映射到webgl 中的坐标 -0.5,0.5 ，相对应的纹理坐标：0.0，1.0
+                    // 意思就是：纹理坐标 0.0，1.0 映射到 webgl 中的坐标为 -0.5, 0.5
+                    // 对应的图片为：./623d6303ecb43a5e7ff33cee9480e408.jpg
                     -0.5, 0.5, 0.0, 1.0,
                     -0.5, -0.5, 0.0, 0.0,
                     0.5, 0.5, 1.0, 1.0,
@@ -80,7 +97,7 @@
                 return n;
             }
 
-            // 初始化纹理对象
+            // 配置和加载纹理
             function initTextures(gl, n) {
                 // 创建纹理对象
                 const texture = gl.createTexture();
@@ -97,9 +114,13 @@
 
 
             }
-
+            // 配置纹理供 webgl 使用
             function loadTexture(gl, n, texture, u_Sampler, img) {
                 // 对纹理图像进行 y 轴反转
+                // 为什么要进行 y轴 反转
+                // webgl 纹理坐标系统中的 t 轴的方向和 PNG、BMP、JPG 等格式的图片的坐标系统的 Y 轴方向相反，因此，只有先将图像 Y 轴进行反转，才能正确地将图像映射到图像上；
+                //  <img src="./7e3af35d52903193627c82fe252208e0.jpg" alt="" srcset="" style="width:800px">
+
                 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
                 // 开启 0 号 纹理单元
                 gl.activeTexture(gl.TEXTURE0);
