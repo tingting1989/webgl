@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+
+    <body>
+        <h2>使用多幅纹理</h2>
+
+        <h3>要进行纹理映射，须遵循以下四步：</h3>
+        <h4>1.准备好映射到集合徒刑上的纹理图像。</h4>
+        <h4>2.为几何图像配置纹理映射方式。</h4>
+        <h4>3.加载纹理图像，对其进行一些配置，以在 webgl 中使用它。</h4>
+        <h4>4.在片元着色器中将相应的纹素中抽取出来，并将纹素的颜色赋给片元</h4>
+        <div>
+
+            <img src="./d763f36b7c3f2526680e7e971c06e60f.jpg" alt="" srcset="" style="width:800px">
+            <img src="./623d6303ecb43a5e7ff33cee9480e408.jpg" alt="" srcset="" style="width:800px">
+            <img src="./redflower.jpg" alt="" srcset="">
+            <img src="./circle.gif" alt="" srcset="">
+        </div>
+
+        <div>
+            <h2>图像坐标系统和 webgl 纹理坐标系统</h2>
+            <img src="./7e3af35d52903193627c82fe252208e0.jpg" alt="" srcset="" style="width:800px">
+        </div>
+        <canvas id="webgl" width="400" height="400"></canvas>
+    </body>
+
+    <script>
+        const VSHADER_SOURCE = `
+            attribute vec4 a_Position;
+            attribute vec2 a_TexCoord;
+            varying vec2 v_TexCoord;
+            void main(){
+                gl_Position = a_Position;
+                v_TexCoord = a_TexCoord;
+            }
+        `
+
+        const FSHADER_SOURCE = `
+            precision mediump float;
+            uniform sampler2D u_Sampler0;
+            uniform sampler2D u_Sampler1;
+            varying vec2 v_TexCoord;
+            void main(){
+                vec4 color0 = texture2D(u_Sampler0 , v_TexCoord);
+                vec4 color1 = texture2D(u_Sampler1 , v_TexCoord);
+                gl_FragColor = color0 * color1;
+            }
+        `
+        function main() {
+            const canvas = document.getElementById('webgl');
+            const gl = canvas.getContext('webgl');
+            if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+                console.error('初始化着色器失败');
+                return;
+            }
+
+            const n = initVertexBuffers(gl)
+            // 指定清空 <canvas> 的颜色
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            initTextures(gl, n)
+        }
+
+        main();
+
+        // 创建缓冲区
+        function initVertexBuffers(gl) {
+            const verticesTexCoords = new Float32Array([
+                    // 纹理要映射到webgl 中的坐标 -0.5,0.5 ，相对应的纹理坐标：0.0，1.0
+                    // 意思就是：纹理坐标 0.0，1.0 映射到 webgl 中的坐标为 -0.5, 0.5
+                    // 对应的图片为：./623d6303ecb43a5e7ff33cee9480e408.jpg
+                    -0.5, 0.5, 0.0, 1.0,
+                    -0.5, -0.5, 0.0, 0.0,
+                    0.5, 0.5, 1.0, 1.0,
+                    0.5, -0.5, 1.0, 0.0
+                ])
+
+            const n = 4;
+
+            const vertexTexCoordBuffer = gl.createBuffer();
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexTexCoordBuffer);
+
+            gl.bufferData(gl.ARRAY_BUFFER, verticesTexCoords, gl.STATIC_DRAW);
+            const FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;
+
+            const a_Position = gl.getAttribLocation(gl.program, 'a_Position')
+
+            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 4, 0)
+
+            gl.enableVertexAttribArray(a_Position);
+
+            // 将纹理坐标分配给 a_TexCoord 并开启
+
+            const a_TexCoord = gl.getAttribLocation(gl.program, 'a_TexCoord');
+            gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
+            gl.enableVertexAttribArray(a_TexCoord);
+            return n
+
+        }
+        // 配置和加载纹理
+        function initTextures(gl, n) {
+            // 创建纹理对象
+            const texture0 = gl.createTexture();
+            const texture1 = gl.createTexture();
+
+            // 获取 u_Sampler0、u_Sampler1变量的存储位置
+
+            const u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
+            const u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
+
+            const img0 = new Image();
+            const img1 = new Image();
+            img0.onload = () => {
+                loadTexture(gl, n, texture0, u_Sampler0, img0, 0)
+            }
+            img1.onload = () => {
+                loadTexture(gl, n, texture1, u_Sampler1, img1, 1)
+            }
+
+            img0.src = './redflower.jpg';
+            img1.src = './circle.gif';
+            return true;
+        }
+
+        // 标记纹理处理单元是否已经就绪
+        let g_texUnit0 = false, g_texUnit1 = false;
+        function loadTexture(gl, n, texture, u_Sampler, img, texUnit) {
+            // y轴翻转图片
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+            if (texUnit == 0) {
+                // 激活 纹理单元
+                gl.activeTexture(gl.TEXTURE0);
+                g_texUnit0 = true;
+            } else {
+                gl.activeTexture(gl.TEXTURE1);
+                g_texUnit1 = true;
+            }
+
+
+            // 绑定纹理对象到目标上
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            // 配置纹理参数
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+            //将纹理单元编号传递给取样器
+            gl.uniform1i(u_Sampler, texUnit);
+            if (g_texUnit0 && g_texUnit1) {
+                gl.clear(gl.COLOR_BUFFER_BIT);   // Clear <canvas>
+
+                // 绘制矩形
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+            }
+
+
+        }
+
+
+        // 初始化着色器
+        function initShaders(gl, vshader, fshader) {
+            const program = createProgram(gl, vshader, fshader);
+            gl.useProgram(program);
+            gl.program = program
+            return true;
+
+        }
+
+        // 创建程序对象
+        function createProgram(gl, vshader, fshader) {
+            const program = gl.createProgram();
+            const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vshader);
+            const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fshader);
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            const link = gl.getProgramParameter(program, gl.LINK_STATUS);
+
+
+            return program
+        }
+
+        function loadShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            const compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            console.log(compiled);
+            return shader
+        }
+    </script>
+
+</html>
