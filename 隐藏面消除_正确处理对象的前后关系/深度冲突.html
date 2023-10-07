@@ -59,9 +59,11 @@
 
                 const n = initVertexBuffers(gl);
 
-                //Set clear color and enable the hidden surface removal function
+
                 gl.clearColor(0, 0, 0, 1);
+                // 启用隐藏面消除功能
                 gl.enable(gl.DEPTH_TEST);
+
                 // Get the storage locations of u_ViewProjMatrix
                 var u_ViewProjMatrix = gl.getUniformLocation(gl.program, 'u_ViewProjMatrix');
                 var viewProjMatrix = new Matrix4();
@@ -77,6 +79,8 @@
                 // 启用多边形偏移
                 gl.enable(gl.POLYGON_OFFSET_FILL);
                 gl.drawArrays(gl.TRIANGLES, 0, n / 2); // 绘制绿色三角形
+
+                // 在绘制前制定用来计算偏移量的参数
                 gl.polygonOffset(1.0, 1.0);
                 gl.drawArrays(gl.TRIANGLES, n / 2, n / 2); // 绘制黄色三角形
             }
